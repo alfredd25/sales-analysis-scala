@@ -1,2 +1,0 @@
-Model,RMSE,MAE,R2,TrainingObservations,TestingObservations
-Random Forest Regression,25203.025583262835,14331.33365361292,0.1682279092000567,251,54
