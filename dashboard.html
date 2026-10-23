@@ -11,14 +11,14 @@
 
   <style>
     :root {
-      --bg: #0b1020;
-      --panel: #131b2e;
-      --panel2: #19243a;
-      --text: #edf3ff;
-      --muted: #9aa9c4;
-      --accent: #7c9cff;
-      --border: #27344e;
-      --green: #55d6a5;
+      --bg: #F8FAFC;
+      --panel: #ffffff;
+      --panel2: #F1F5F9;
+      --text: #1E293B;
+      --muted: #64748B;
+      --accent: #2563EB;
+      --border: #E2E8F0;
+      --green: #14B8A6;
     }
 
     * { box-sizing: border-box; }
@@ -36,46 +36,49 @@
     }
 
     aside {
-      width: 230px;
-      padding: 28px 18px;
-      background: #0e1628;
+      width: 218px;
+      padding: 30px 16px;
+      background: #1E293B;
       border-right: 1px solid var(--border);
       flex-shrink: 0;
     }
 
     .brand {
-      font-size: 21px;
-      font-weight: 800;
-      margin-bottom: 8px;
+      padding: 0 8px;
+      font-size: 20px;
+      font-weight: 750;
+      letter-spacing: -0.3px;
+      margin-bottom: 34px;
     }
 
-    .brand span { color: var(--accent); }
+    .brand { color: #F8FAFC; }
 
-    .subtitle {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .nav-title {
-      margin: 35px 0 12px;
-      color: var(--muted);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-    }
+    .brand span { color: #93C5FD; }
 
     .nav-item {
-      padding: 12px;
-      margin: 5px 0;
-      border-radius: 8px;
-      color: #c7d3ea;
+      display: block;
+      width: 100%;
+      padding: 12px 13px;
+      margin: 7px 0;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: #CBD5E1;
       font-size: 14px;
+      text-decoration: none;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .nav-item:hover {
+      background: #334155;
+      border-color: #475569;
+      color: #ffffff;
     }
 
     .nav-item.active {
-      background: #202f50;
-      color: white;
+      background: #2563EB;
+      border-color: #3B82F6;
+      color: #ffffff;
+      box-shadow: 0 5px 12px rgba(30, 41, 59, 0.16);
     }
 
     main {
@@ -98,15 +101,6 @@
 
     .muted { color: var(--muted); font-size: 13px; }
 
-    .pill {
-      padding: 9px 13px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      color: var(--green);
-      font-size: 12px;
-      background: var(--panel);
-    }
-
     .kpis {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -114,28 +108,33 @@
       margin-bottom: 20px;
     }
 
+    .kpis .card:first-child {
+      border-top: 3px solid var(--accent);
+    }
+
     .card {
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 13px;
-      padding: 20px;
+      border-radius: 10px;
+      padding: 22px;
       min-width: 0;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
 
     .kpi-label { color: var(--muted); font-size: 13px; }
     .kpi-value {
       font-size: clamp(19px, 2vw, 27px);
-      font-weight: 750;
-      margin: 13px 0 8px;
+      font-weight: 700;
+      margin: 10px 0 8px;
       overflow-wrap: anywhere;
     }
 
-    .kpi-note { color: var(--green); font-size: 12px; }
+    .kpi-note { color: var(--muted); font-size: 12px; }
 
     .grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
+      gap: 20px;
       margin-bottom: 18px;
     }
 
@@ -167,7 +166,7 @@
     .graph-stat {
       background: var(--panel2);
       padding: 16px;
-      border-radius: 10px;
+      border-radius: 8px;
     }
 
     .graph-stat strong {
@@ -229,23 +228,10 @@
 <div class="layout">
   <aside>
     <div class="brand">Retail<span>Pulse</span></div>
-    <div class="subtitle">INT315 · Cluster Computing<br>Powered by Apache Spark</div>
-
-    <div class="nav-title">Workspace</div>
-    <div class="nav-item active">Sales Overview</div>
-    <div class="nav-item">Product Analytics</div>
-    <div class="nav-item">Geographic Analysis</div>
-    <div class="nav-item">GraphX Network</div>
-
-    <div class="nav-title">Technology</div>
-    <div class="nav-item">Scala & Spark</div>
-    <div class="nav-item">Spark SQL</div>
-    <div class="nav-item">RDD Analytics</div>
-    <div class="nav-item">GraphX</div>
-
-    <div class="subtitle" style="margin-top:40px">
-      Academic project<br>Retail transaction analytics
-    </div>
+    <nav aria-label="Dashboard sections">
+      <a class="nav-item active" href="dashboard.html" aria-current="page">Sales Overview</a>
+      <a class="nav-item" href="forecast_lab.html">Forecast</a>
+    </nav>
   </aside>
 
   <main>
@@ -254,7 +240,6 @@
         <h1>Sales Analytics Dashboard</h1>
         <div class="muted">Retail performance, product trends and graph analytics</div>
       </div>
-      <div class="pill">● Spark analysis complete</div>
     </header>
 
     <section class="kpis">
@@ -454,8 +439,8 @@
     return;
   }
 
-  Chart.defaults.color = "#9aa9c4";
-  Chart.defaults.borderColor = "#27344e";
+  Chart.defaults.color = "#64748B";
+  Chart.defaults.borderColor = "#E2E8F0";
   Chart.defaults.font.family = "Segoe UI, Arial, sans-serif";
 
   new Chart(document.getElementById("monthlyChart"), {
@@ -465,8 +450,8 @@
       datasets: [{
         label: "Sales value (GBP)",
         data: data.monthly.map(x => x.revenue),
-        borderColor: "#7c9cff",
-        backgroundColor: "rgba(124,156,255,0.13)",
+        borderColor: "#2563EB",
+        backgroundColor: "rgba(37,99,235,0.10)",
         fill: true,
         tension: 0.3,
         pointRadius: 3
@@ -500,7 +485,7 @@
       datasets: [{
         label: "Sales value (GBP)",
         data: data.products.map(x => x.revenue),
-        backgroundColor: "#7c9cff",
+        backgroundColor: "#8B5CF6",
         borderRadius: 4
       }]
     },
@@ -529,7 +514,7 @@
       datasets: [{
         label: "Sales value (GBP)",
         data: data.countries.map(x => x.revenue),
-        backgroundColor: "#55d6a5",
+        backgroundColor: "#14B8A6",
         borderRadius: 4
       }]
     },

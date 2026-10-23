@@ -1,0 +1,423 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RetailPulse | Forecast Lab</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --panel: #FFFFFF;
+      --panel2: #F1F5F9;
+      --text: #1E293B;
+      --muted: #64748B;
+      --accent: #2563EB;
+      --border: #E2E8F0;
+      --green: #14B8A6;
+      --orange: #F59E0B;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .layout { display: flex; min-height: 100vh; }
+
+    aside {
+      width: 230px;
+      padding: 28px 18px;
+      background: #1E293B;
+      border-right: 1px solid #334155;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      font-size: 21px;
+      font-weight: 750;
+      margin-bottom: 34px;
+      padding: 0 8px;
+    }
+
+    .brand { color: #F8FAFC; }
+    .brand span { color: #93C5FD; }
+
+    .nav-item {
+      display: block;
+      width: 100%;
+      padding: 12px 13px;
+      margin: 7px 0;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: #CBD5E1;
+      font-size: 14px;
+      text-decoration: none;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    }
+
+    .nav-item:hover {
+      background: #334155;
+      border-color: #475569;
+      color: #FFFFFF;
+    }
+
+    .nav-item.active {
+      background: #2563EB;
+      border-color: #3B82F6;
+      color: #FFFFFF;
+      box-shadow: 0 5px 12px rgba(30, 41, 59, 0.16);
+    }
+
+    main {
+      min-width: 0;
+      flex: 1;
+      padding: 30px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    h1 { font-size: 27px; margin: 0 0 7px; }
+    h2 { font-size: 16px; margin: 0; }
+    .muted { color: var(--muted); font-size: 13px; }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border: 1px solid #BFDBFE;
+      border-radius: 999px;
+      background: #EFF6FF;
+      color: #1D4ED8;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px;
+      min-width: 0;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .metric-value {
+      font-size: 27px;
+      font-weight: 750;
+      letter-spacing: -0.5px;
+    }
+
+    .metric-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 9px;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .panel-heading p {
+      color: var(--muted);
+      font-size: 12px;
+      margin: 7px 0 0;
+      line-height: 1.5;
+    }
+
+    .chart-wrap { height: 300px; position: relative; }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 13px 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td:last-child, th:last-child { text-align: right; }
+
+    .model-name { font-weight: 700; }
+    .best { color: var(--green); font-weight: 700; }
+
+    .notice {
+      border: 1px solid #FCD34D;
+      background: #FFFBEB;
+      color: #92400E;
+      border-color: #FCD34D;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .back-link { color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 600; }
+
+    footer {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      padding: 20px 0 5px;
+    }
+
+    @media (max-width: 1000px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .section-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 650px) {
+      .layout { display: block; }
+      aside { width: 100%; padding: 18px; }
+      main { padding: 18px; }
+      .grid { grid-template-columns: 1fr; }
+      h1 { font-size: 23px; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand">Retail<span>Pulse</span></div>
+    <nav aria-label="Dashboard sections">
+      <a class="nav-item" href="dashboard.html">Sales Overview</a>
+      <a class="nav-item active" href="forecast_lab.html" aria-current="page">Forecast</a>
+    </nav>
+  </aside>
+
+  <main>
+    <header>
+      <div>
+        <h1>Forecast Lab</h1>
+        <div class="muted">Machine learning evaluation and future sales projections</div>
+      </div>
+      <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+    </header>
+
+    <div class="notice">
+      <strong>Forecast scope:</strong> Model performance metrics are calculated on the held-out test period.
+      The future forecast below contains seven saved predictions beginning after the last historical date,
+      9 December 2011. This page displays saved results; changing the view does not retrain the model
+      or generate additional predictions.
+    </div>
+
+    <section class="grid">
+      <div class="panel">
+        <div class="metric-label">Selected forecasting model</div>
+        <div class="metric-value">Random Forest</div>
+        <div class="metric-note">Best of the two evaluated models by RMSE and MAE</div>
+      </div>
+
+      <div class="panel">
+        <div class="metric-label">Random Forest RMSE</div>
+        <div class="metric-value">22,373.98</div>
+        <div class="metric-note">Lower is better · Revenue units</div>
+      </div>
+
+      <div class="panel">
+        <div class="metric-label">Random Forest R²</div>
+        <div class="metric-value">0.4700</div>
+        <div class="metric-note">Test-set coefficient of determination</div>
+      </div>
+    </section>
+
+    <section class="section-grid">
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Saved 7-Day Sales Forecast</h2>
+            <p>Predicted daily revenue · 10–16 December 2011</p>
+          </div>
+          <span class="pill">Saved ML output</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="forecastChart"></canvas>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Model Comparison</h2>
+            <p>Performance on the same held-out test set</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>RMSE</th>
+                <th>MAE</th>
+                <th>R²</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="model-name">Random Forest</td>
+                <td class="best">22,373.98</td>
+                <td class="best">12,958.71</td>
+                <td class="best">0.4700</td>
+              </tr>
+              <tr>
+                <td class="model-name">Linear Regression</td>
+                <td>23,888.48</td>
+                <td>15,372.00</td>
+                <td>0.3958</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted" style="line-height:1.6;margin-top:16px">
+          Random Forest has lower RMSE and MAE and higher R² than Linear Regression in this evaluation.
+        </p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Future Revenue Predictions</h2>
+          <p>Values loaded from the saved Spark ML forecast output</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Forecast date</th>
+              <th>Predicted revenue</th>
+            </tr>
+          </thead>
+          <tbody id="forecastRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      INT315 · Cluster Computing Project · Apache Spark MLlib · Random Forest Regression
+    </footer>
+  </main>
+</div>
+
+<script>
+  const forecast = [
+    { date: "2011-12-10", revenue: 26753.258717802888 },
+    { date: "2011-12-11", revenue: 23426.670083664296 },
+    { date: "2011-12-12", revenue: 55480.60190378328 },
+    { date: "2011-12-13", revenue: 65976.53441192006 },
+    { date: "2011-12-14", revenue: 67718.19404943984 },
+    { date: "2011-12-15", revenue: 59309.5505761065 },
+    { date: "2011-12-16", revenue: 59970.75374646364 }
+  ];
+
+  const money = value => "£" + value.toLocaleString("en-GB", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+  document.getElementById("forecastRows").innerHTML = forecast.map(row => `
+    <tr>
+      <td>${row.date}</td>
+      <td>${money(row.revenue)}</td>
+    </tr>
+  `).join("");
+
+  new Chart(document.getElementById("forecastChart"), {
+    type: "line",
+    data: {
+      labels: forecast.map(row => row.date.slice(5)),
+      datasets: [{
+        label: "Predicted Revenue",
+        data: forecast.map(row => row.revenue),
+        borderColor: "#2563EB",
+        backgroundColor: "rgba(37, 99, 235, 0.10)",
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: "#14B8A6",
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: "#1E293B" }
+        },
+        tooltip: {
+          callbacks: {
+            label: context => "Predicted revenue: " + money(context.parsed.y)
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#64748B" },
+          grid: { color: "rgba(100, 116, 139, 0.14)" }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: "#64748B",
+            callback: value => "£" + Number(value).toLocaleString("en-GB")
+          },
+          grid: { color: "rgba(100, 116, 139, 0.14)" }
+        }
+      }
+    }
+  });
+</script>
+</body>
+</html>

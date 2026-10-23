@@ -1,5 +1,31 @@
-C:\Users\alfre\INT315-Sales-Analysis\data
-data
 
-screenshots
-C:\Users\alfre\INT315-Sales-Analysis\screenshots
+# Generated Spark outputs and trained models
+output/
+target/
+
+# Spark and Scala build artifacts
+*.class
+*.jar
+metastore_db/
+spark-warehouse/
+derby.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# IDE and local workspace files
+.idea/
+.metals/
+.bloop/
+.bsp/
