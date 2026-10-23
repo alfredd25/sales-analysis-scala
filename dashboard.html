@@ -1,0 +1,556 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RetailPulse | Spark Analytics</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="dashboard_data.js"></script>
+
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #131b2e;
+      --panel2: #19243a;
+      --text: #edf3ff;
+      --muted: #9aa9c4;
+      --accent: #7c9cff;
+      --border: #27344e;
+      --green: #55d6a5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    aside {
+      width: 230px;
+      padding: 28px 18px;
+      background: #0e1628;
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .brand {
+      font-size: 21px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .brand span { color: var(--accent); }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .nav-title {
+      margin: 35px 0 12px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .nav-item {
+      padding: 12px;
+      margin: 5px 0;
+      border-radius: 8px;
+      color: #c7d3ea;
+      font-size: 14px;
+    }
+
+    .nav-item.active {
+      background: #202f50;
+      color: white;
+    }
+
+    main {
+      min-width: 0;
+      flex: 1;
+      padding: 30px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    h1 { font-size: 27px; margin: 0 0 7px; }
+    h2 { font-size: 16px; margin: 0; }
+
+    .muted { color: var(--muted); font-size: 13px; }
+
+    .pill {
+      padding: 9px 13px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--green);
+      font-size: 12px;
+      background: var(--panel);
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 20px;
+      min-width: 0;
+    }
+
+    .kpi-label { color: var(--muted); font-size: 13px; }
+    .kpi-value {
+      font-size: clamp(19px, 2vw, 27px);
+      font-weight: 750;
+      margin: 13px 0 8px;
+      overflow-wrap: anywhere;
+    }
+
+    .kpi-note { color: var(--green); font-size: 12px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .chart-card { min-height: 350px; }
+
+    .chart-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 270px;
+      width: 100%;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    .graph-kpis {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .graph-stat {
+      background: var(--panel2);
+      padding: 16px;
+      border-radius: 10px;
+    }
+
+    .graph-stat strong {
+      display: block;
+      font-size: 24px;
+      margin-top: 8px;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 500px;
+    }
+
+    th, td {
+      padding: 13px 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th { color: var(--muted); font-weight: 500; }
+    td:last-child, th:last-child { text-align: right; }
+    tbody tr:hover { background: var(--panel2); }
+
+    .bar {
+      display: inline-block;
+      height: 5px;
+      border-radius: 5px;
+      background: var(--accent);
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    footer {
+      color: var(--muted);
+      font-size: 12px;
+      padding: 15px 0 5px;
+    }
+
+    @media (max-width: 1100px) {
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 760px) {
+      .layout { display: block; }
+      aside { display: none; }
+      main { padding: 18px; }
+      .grid { grid-template-columns: 1fr; }
+      .full { grid-column: auto; }
+      h1 { font-size: 23px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand">Retail<span>Pulse</span></div>
+    <div class="subtitle">INT315 · Cluster Computing<br>Powered by Apache Spark</div>
+
+    <div class="nav-title">Workspace</div>
+    <div class="nav-item active">Sales Overview</div>
+    <div class="nav-item">Product Analytics</div>
+    <div class="nav-item">Geographic Analysis</div>
+    <div class="nav-item">GraphX Network</div>
+
+    <div class="nav-title">Technology</div>
+    <div class="nav-item">Scala & Spark</div>
+    <div class="nav-item">Spark SQL</div>
+    <div class="nav-item">RDD Analytics</div>
+    <div class="nav-item">GraphX</div>
+
+    <div class="subtitle" style="margin-top:40px">
+      Academic project<br>Retail transaction analytics
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <div>
+        <h1>Sales Analytics Dashboard</h1>
+        <div class="muted">Retail performance, product trends and graph analytics</div>
+      </div>
+      <div class="pill">● Spark analysis complete</div>
+    </header>
+
+    <section class="kpis">
+      <div class="card">
+        <div class="kpi-label">Total Sales Value</div>
+        <div class="kpi-value" id="totalRevenue">—</div>
+        <div class="kpi-note">GBP · filtered sales lines</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Valid Sales Lines</div>
+        <div class="kpi-value" id="validLines">—</div>
+        <div class="kpi-note">After data cleaning</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Total Units Sold</div>
+        <div class="kpi-value" id="totalUnits">—</div>
+        <div class="kpi-note">Positive quantities</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">Average Line Value</div>
+        <div class="kpi-value" id="averageLine">—</div>
+        <div class="kpi-note">Average sales line · GBP</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card chart-card full">
+        <div class="chart-heading">
+          <div>
+            <h2>Monthly Sales Trend</h2>
+            <div class="muted">Sales value by invoice month</div>
+          </div>
+          <div class="muted">13 months</div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="monthlyChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-heading">
+          <div>
+            <h2>Top Products</h2>
+            <div class="muted">Ranked by total sales value</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="productsChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-heading">
+          <div>
+            <h2>Top Countries</h2>
+            <div class="muted">Sales value by country</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="countriesChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card full">
+        <div class="chart-heading">
+          <div>
+            <h2>Top Product Sales Table</h2>
+            <div class="muted">Revenue and units sold from Spark SQL</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Product</th><th>Units sold</th><th>Sales value (GBP)</th></tr>
+            </thead>
+            <tbody id="productsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>GraphX Network Overview</h2>
+        <div class="muted" style="margin-top:7px">Country–product relationship graph</div>
+        <div class="graph-kpis">
+          <div class="graph-stat">
+            <span class="muted">Vertices</span>
+            <strong id="vertices">—</strong>
+          </div>
+          <div class="graph-stat">
+            <span class="muted">Edges</span>
+            <strong id="edges">—</strong>
+          </div>
+        </div>
+        <div class="muted" style="margin-top:15px">
+          Vertices represent countries and products. Edge weights represent aggregated sales value.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Highest-Value Graph Relationships</h2>
+        <div class="muted" style="margin:7px 0 14px">
+          Top country–product edges from GraphX
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Country / Product</th><th>Sales value</th></tr>
+            </thead>
+            <tbody id="graphTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      INT315 Cluster Computing · Scala · Apache Spark 3.5.9 · Spark SQL · GraphX
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  const data = window.RETAIL_DATA;
+
+  if (!data) {
+    document.body.innerHTML =
+      "<p style='color:white;padding:30px'>Dashboard data not found. Run prepare_dashboard.py first.</p>";
+    return;
+  }
+
+  const money = value =>
+    new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: "GBP",
+      maximumFractionDigits: 2
+    }).format(value);
+
+  const integer = value =>
+    new Intl.NumberFormat("en-GB", {
+      maximumFractionDigits: 0
+    }).format(value);
+
+  document.getElementById("totalRevenue").textContent =
+    money(data.summary.totalRevenue);
+
+  document.getElementById("validLines").textContent =
+    integer(data.summary.validSalesLines);
+
+  document.getElementById("totalUnits").textContent =
+    integer(data.summary.totalUnitsSold);
+
+  document.getElementById("averageLine").textContent =
+    money(data.summary.averageLineValue);
+
+  document.getElementById("vertices").textContent =
+    integer(data.graphStats.vertices);
+
+  document.getElementById("edges").textContent =
+    integer(data.graphStats.edges);
+
+  document.getElementById("productsTable").innerHTML =
+    data.products.map((p, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${escapeHTML(p.name)}</td>
+        <td>${integer(p.unitsSold)}</td>
+        <td>${money(p.revenue)}</td>
+      </tr>
+    `).join("");
+
+  document.getElementById("graphTable").innerHTML =
+    data.graph.map(g => `
+      <tr>
+        <td>
+          <div>${escapeHTML(g.country)}</div>
+          <div class="muted">${escapeHTML(g.product)}</div>
+        </td>
+        <td>${money(g.salesValue)}</td>
+      </tr>
+    `).join("");
+
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, ch => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[ch]));
+  }
+
+  if (typeof Chart === "undefined") {
+    document.querySelectorAll(".chart-wrap").forEach(el => {
+      el.innerHTML =
+        "<p class='muted'>Charts require an internet connection to load Chart.js.</p>";
+    });
+    return;
+  }
+
+  Chart.defaults.color = "#9aa9c4";
+  Chart.defaults.borderColor = "#27344e";
+  Chart.defaults.font.family = "Segoe UI, Arial, sans-serif";
+
+  new Chart(document.getElementById("monthlyChart"), {
+    type: "line",
+    data: {
+      labels: data.monthly.map(x => x.month),
+      datasets: [{
+        label: "Sales value (GBP)",
+        data: data.monthly.map(x => x.revenue),
+        borderColor: "#7c9cff",
+        backgroundColor: "rgba(124,156,255,0.13)",
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => money(ctx.raw)
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: {
+            callback: value => "£" + (value / 1000).toFixed(0) + "k"
+          }
+        }
+      }
+    }
+  });
+
+  new Chart(document.getElementById("productsChart"), {
+    type: "bar",
+    data: {
+      labels: data.products.map(x => x.name),
+      datasets: [{
+        label: "Sales value (GBP)",
+        data: data.products.map(x => x.revenue),
+        backgroundColor: "#7c9cff",
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          ticks: {
+            callback: value => "£" + (value / 1000).toFixed(0) + "k"
+          }
+        },
+        y: {
+          ticks: { font: { size: 10 } }
+        }
+      }
+    }
+  });
+
+  new Chart(document.getElementById("countriesChart"), {
+    type: "bar",
+    data: {
+      labels: data.countries.map(x => x.name),
+      datasets: [{
+        label: "Sales value (GBP)",
+        data: data.countries.map(x => x.revenue),
+        backgroundColor: "#55d6a5",
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          ticks: {
+            callback: value => "£" + (value / 1000).toFixed(0) + "k"
+          }
+        },
+        y: {
+          ticks: { font: { size: 11 } }
+        }
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
