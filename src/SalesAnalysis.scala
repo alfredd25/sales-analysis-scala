@@ -2,6 +2,11 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.ml.feature.VectorAssembler
+import org.apache.spark.ml.regression.RandomForestRegressor
+import org.apache.spark.ml.evaluation.RegressionEvaluator
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.ml.regression.LinearRegression
 
 object SalesAnalysis {
 
@@ -402,6 +407,180 @@ object SalesAnalysis {
     countryProductSales.unpersist()
 
     println("GraphX results saved to output/graphx_results")
+
+    
+    // STEP 10: MACHINE LEARNING - DAILY SALES FORECASTING
+    println("\n==========================================")
+    println(" SPARK MLlib: DAILY SALES FORECASTING")
+    println("==========================================")
+
+    // Aggregate transaction-level data into daily sales
+    val dailySales = salesWithMonth
+      .filter(col("ParsedInvoiceDate").isNotNull)
+      .groupBy(to_date(col("ParsedInvoiceDate")).alias("SalesDate"))
+      .agg(
+        round(sum("Revenue"), 2).alias("ActualRevenue")
+      )
+      .filter(col("SalesDate").isNotNull)
+      .orderBy("SalesDate")
+      .cache()
+
+    val dailyCount = dailySales.count()
+
+    println(s"Daily observations: $dailyCount")
+
+    // Create calendar features
+    val firstDate = dailySales
+      .agg(min("SalesDate"))
+      .first()
+      .getDate(0)
+
+    val featuredSales = dailySales
+      .withColumn(
+        "DayIndex",
+        datediff(col("SalesDate"), lit(firstDate)).cast("double")
+      )
+      .withColumn(
+        "DayOfWeek",
+        dayofweek(col("SalesDate")).cast("double")
+      )
+      .withColumn(
+        "Month",
+        month(col("SalesDate")).cast("double")
+      )
+      .withColumn(
+        "DayOfMonth",
+        dayofmonth(col("SalesDate")).cast("double")
+      )
+      .cache()
+
+    // Assemble model features
+    val assembler = new VectorAssembler()
+      .setInputCols(Array(
+        "DayIndex",
+        "DayOfWeek",
+        "Month",
+        "DayOfMonth"
+      ))
+      .setOutputCol("features")
+
+    val modelData = assembler.transform(featuredSales)
+      .select(
+        "SalesDate",
+        "features",
+        "ActualRevenue"
+      )
+      .cache()
+
+    // Chronological split: train on earlier dates,
+    // test on the most recent approximately 20% of dates.
+    val maxDate = dailySales
+      .agg(max("SalesDate"))
+      .first()
+      .getDate(0)
+
+    val testStartDate = java.sql.Date.valueOf(
+      maxDate.toLocalDate.minusDays(
+        math.max(1L, math.ceil(dailyCount * 0.20).toLong)
+      )
+    )
+
+    val trainingData = modelData
+      .filter(col("SalesDate") < lit(testStartDate))
+
+    val testData = modelData
+      .filter(col("SalesDate") >= lit(testStartDate))
+
+    println(s"Training observations: ${trainingData.count()}")
+    println(s"Testing observations: ${testData.count()}")
+    println(s"Test period begins: $testStartDate")
+
+    // Train Random Forest regression model
+    val rf = new RandomForestRegressor()
+      .setLabelCol("ActualRevenue")
+      .setFeaturesCol("features")
+      .setPredictionCol("PredictedRevenue")
+      .setNumTrees(50)
+      .setMaxDepth(5)
+      .setSeed(42)
+
+    val rfModel = rf.fit(trainingData)
+
+    // Predict on held-out future dates
+    val predictions = rfModel.transform(testData)
+      .select(
+        "SalesDate",
+        "ActualRevenue",
+        "PredictedRevenue"
+      )
+      .orderBy("SalesDate")
+      .cache()
+
+    println("\n--- SAMPLE DAILY PREDICTIONS ---")
+    predictions.show(10, truncate = false)
+
+    // Evaluate regression performance
+    val rmseEvaluator = new RegressionEvaluator()
+      .setLabelCol("ActualRevenue")
+      .setPredictionCol("PredictedRevenue")
+      .setMetricName("rmse")
+
+    val maeEvaluator = new RegressionEvaluator()
+      .setLabelCol("ActualRevenue")
+      .setPredictionCol("PredictedRevenue")
+      .setMetricName("mae")
+
+    val r2Evaluator = new RegressionEvaluator()
+      .setLabelCol("ActualRevenue")
+      .setPredictionCol("PredictedRevenue")
+      .setMetricName("r2")
+
+    val rmse = rmseEvaluator.evaluate(predictions)
+    val mae = maeEvaluator.evaluate(predictions)
+    val r2 = r2Evaluator.evaluate(predictions)
+
+    println("\n--- MODEL EVALUATION ---")
+    println(f"RMSE: $rmse%.2f")
+    println(f"MAE:  $mae%.2f")
+    println(f"R2:   $r2%.4f")
+
+    // Export actual versus predicted results
+    val mlOutput =
+      "C:/Users/alfre/INT315-Sales-Analysis/output/ml_predictions"
+
+    predictions.coalesce(1)
+      .write
+      .mode("overwrite")
+      .option("header", "true")
+      .csv(mlOutput)
+
+    // Export model metrics
+    val metricsDF = spark.createDataFrame(Seq(
+      ("Random Forest Regression", rmse, mae, r2,
+       trainingData.count(), testData.count())
+    )).toDF(
+      "Model",
+      "RMSE",
+      "MAE",
+      "R2",
+      "TrainingObservations",
+      "TestingObservations"
+    )
+
+    metricsDF.coalesce(1)
+      .write
+      .mode("overwrite")
+      .option("header", "true")
+      .csv("C:/Users/alfre/INT315-Sales-Analysis/output/ml_metrics")
+
+    println("\nMLlib predictions and metrics saved successfully.")
+    println("--- MLlib ANALYSIS COMPLETE ---")
+
+    predictions.unpersist()
+    modelData.unpersist()
+    featuredSales.unpersist()
+    dailySales.unpersist()
+
 
 
     salesDF.unpersist()
